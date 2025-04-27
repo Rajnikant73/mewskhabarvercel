@@ -6,7 +6,7 @@ interface NewsItem {
   title: { rendered: string };
   excerpt: { rendered: string };
   date: string;
-  link: string;
+  slug: string;
 }
 
 export default function NewsPage() {
@@ -46,14 +46,15 @@ export default function NewsPage() {
               className="mt-2 text-gray-700"
               dangerouslySetInnerHTML={{ __html: item.excerpt.rendered }}
             />
+
+            {/* ✅ Correct for Vite + React */}
             <a
-              href={item.link}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`/news/${item.slug}`}
               className="text-blue-600 font-medium mt-2 inline-block"
             >
               पूरा समाचार पढ्नुहोस् →
             </a>
+
           </div>
         ))}
       </div>
