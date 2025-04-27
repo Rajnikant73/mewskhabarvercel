@@ -1,6 +1,11 @@
 export async function getNews() {
     try {
-      const res = await fetch('https://mewskhabar.com/wp-json/wp/v2/posts');
+      const res = await fetch('https://cornflowerblue-moose-538317.hostingersite.com/wp-json/wp/v2/posts', {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+  
       if (!res.ok) {
         throw new Error('Failed to fetch news');
       }
