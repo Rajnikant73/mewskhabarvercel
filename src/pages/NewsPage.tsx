@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getNews } from '../api/getNews';
 
 interface NewsItem {
@@ -6,7 +7,7 @@ interface NewsItem {
   title: { rendered: string };
   excerpt: { rendered: string };
   date: string;
-  slug: string;
+  slug: string; // ✅ Important for internal link
 }
 
 export default function NewsPage() {
@@ -19,7 +20,7 @@ export default function NewsPage() {
         const data = await getNews();
         setNews(data);
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching news:', error);
       } finally {
         setLoading(false);
       }
@@ -46,15 +47,12 @@ export default function NewsPage() {
               className="mt-2 text-gray-700"
               dangerouslySetInnerHTML={{ __html: item.excerpt.rendered }}
             />
-
-            {/* ✅ Correct for Vite + React */}
-            <a
-              href={`/news/${item.slug}`}
+            <Link
+              to={`/news/${item.slug}`}
               className="text-blue-600 font-medium mt-2 inline-block"
             >
               पूरा समाचार पढ्नुहोस् →
-            </a>
-
+            </Link>
           </div>
         ))}
       </div>
