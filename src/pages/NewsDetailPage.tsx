@@ -9,7 +9,7 @@ interface NewsPost {
 }
 
 export default function NewsDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>(); // 🔥 using slug instead of id
   const navigate = useNavigate();
   const [post, setPost] = useState<NewsPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,20 +17,24 @@ export default function NewsDetailPage() {
   useEffect(() => {
     async function fetchPost() {
       try {
-        const res = await fetch(`https://cornflowerblue-moose-538317.hostingersite.com/wp-json/wp/v2/posts/${id}`);
+        const res = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts?slug=${slug}`);
         if (!res.ok) {
           throw new Error('Failed to fetch post');
         }
         const data = await res.json();
-        setPost(data);
+        if (data.length > 0) {
+          setPost(data[0]); // since WordPress returns array when fetching by slug
+        } else {
+          setPost(null);
+        }
       } catch (error) {
         console.error('Error fetching post:', error);
       } finally {
         setLoading(false);
       }
     }
-    if (id) fetchPost();
-  }, [id]);
+    if (slug) fetchPost();
+  }, [slug]);
 
   if (loading) {
     return <div className="text-center mt-10">Loading full news...</div>;
@@ -40,7 +44,7 @@ export default function NewsDetailPage() {
     return <div className="text-center mt-10 text-red-600 font-semibold">समाचार भेटिएन!</div>;
   }
 
-  const shareUrl = `https://www.mewskhabar.com/news/${id}`;
+  const shareUrl = `https://www.mewskhabar.com/news/${slug}`;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom'; // <<== IMPORTANT ADDITION
+import { Link } from 'react-router-dom';
 import { getNews } from '../api/getNews';
 
 interface NewsItem {
   id: number;
+  slug: string; // 🔥 Add slug here
   title: { rendered: string };
   excerpt: { rendered: string };
   date: string;
@@ -47,7 +48,7 @@ export default function NewsPage() {
               dangerouslySetInnerHTML={{ __html: item.excerpt.rendered }}
             />
             <Link
-              to={`/news/${item.id}`} // <<== Corrected internal routing
+              to={`/news/${item.slug}`} // 🔥 Corrected from id ➔ slug
               className="text-blue-600 font-medium mt-2 inline-block"
             >
               पूरा समाचार पढ्नुहोस् →
