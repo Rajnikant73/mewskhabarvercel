@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Tag, Calendar, ExternalLink } from 'lucide-react';
+import { Calendar, ExternalLink } from 'lucide-react'; // 🧹 Clean import – Tag removed
 
 interface CouponCardProps {
   id: string;

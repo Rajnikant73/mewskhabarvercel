@@ -9,7 +9,7 @@ interface NewsPost {
 }
 
 export default function NewsDetailPage() {
-  const { slug } = useParams<{ slug: string }>(); // 🔥 using slug instead of id
+  const { id } = useParams<{ id: string }>(); // ✅ Corrected to id
   const navigate = useNavigate();
   const [post, setPost] = useState<NewsPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,24 +17,20 @@ export default function NewsDetailPage() {
   useEffect(() => {
     async function fetchPost() {
       try {
-        const res = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts?slug=${slug}`);
+        const res = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts/${id}`);
         if (!res.ok) {
           throw new Error('Failed to fetch post');
         }
         const data = await res.json();
-        if (data.length > 0) {
-          setPost(data[0]); // since WordPress returns array when fetching by slug
-        } else {
-          setPost(null);
-        }
+        setPost(data);
       } catch (error) {
         console.error('Error fetching post:', error);
       } finally {
         setLoading(false);
       }
     }
-    if (slug) fetchPost();
-  }, [slug]);
+    if (id) fetchPost();
+  }, [id]);
 
   if (loading) {
     return <div className="text-center mt-10">Loading full news...</div>;
@@ -44,28 +40,21 @@ export default function NewsDetailPage() {
     return <div className="text-center mt-10 text-red-600 font-semibold">समाचार भेटिएन!</div>;
   }
 
-  const shareUrl = `https://www.mewskhabar.com/news/${slug}`;
+  const shareUrl = `https://www.mewskhabar.com/news/${id}`;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
-      {/* Title */}
       <h1
         className="text-4xl font-bold mb-4 text-gray-800 leading-tight"
         dangerouslySetInnerHTML={{ __html: post.title.rendered }}
       />
-
-      {/* Date */}
       <p className="text-sm text-gray-500 mb-8">
         {new Date(post.date).toLocaleDateString('ne-NP')}
       </p>
-
-      {/* Content */}
       <div
         className="prose prose-lg text-gray-700 max-w-none"
         dangerouslySetInnerHTML={{ __html: post.content.rendered }}
       />
-
-      {/* Share Buttons */}
       <div className="flex flex-wrap gap-4 mt-10">
         <a
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
@@ -84,8 +73,6 @@ export default function NewsDetailPage() {
           Share on WhatsApp
         </a>
       </div>
-
-      {/* Back Button */}
       <div className="mt-12">
         <button
           onClick={() => navigate('/news')}

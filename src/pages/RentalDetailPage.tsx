@@ -1,25 +1,54 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { dummyRentalData } from '../data/rentalData';
+import { getRentals } from '../api/getRentals';
 import { Phone, MapPin, Calendar, Home as HomeIcon, CheckCircle, ArrowLeft } from 'lucide-react';
-import RentalCard from '../components/RentalCard';
 import NotFoundPage from './NotFoundPage';
+
+interface RentalItem {
+  id: number;
+  title: { rendered: string };
+  content: { rendered: string };
+  date: string;
+  _embedded?: {
+    'wp:featuredmedia'?: [
+      { source_url: string }
+    ];
+  };
+}
 
 const RentalDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const rental = dummyRentalData.find(rental => rental.id === id);
-  
-  const relatedRentals = dummyRentalData
-    .filter(item => item.id !== id && item.location.includes(rental?.location.split(',')[0] || ''))
-    .slice(0, 3);
-  
+  const [rental, setRental] = useState<RentalItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchRental() {
+      try {
+        const data = await getRentals();
+        const found = data.find((item: RentalItem) => String(item.id) === id);
+        setRental(found || null);
+      } catch (error) {
+        console.error('Error fetching rental:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRental();
+  }, [id]);
+
+  const handleCall = () => {
+    window.location.href = `tel:9818553941`; // Placeholder number
+  };
+
+  if (loading) {
+    return <div className="text-center mt-10">Loading rental details...</div>;
+  }
+
   if (!rental) {
     return <NotFoundPage />;
   }
 
-  const handleCall = () => {
-    window.location.href = `tel:${rental.phone}`;
-  };
+  const featuredImage = rental._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/600x400.png?text=Rental+Image';
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -29,96 +58,78 @@ const RentalDetailPage: React.FC = () => {
           <span>Sab Room Listing Ma Janus</span>
         </Link>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-[300px] md:h-full">
-            <img 
-              src={rental.image} 
-              alt={rental.title} 
-              className="w-full h-full object-cover"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6">
+          {/* Image Section */}
+          <div className="w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
+            <img
+              src={featuredImage}
+              alt={rental.title.rendered}
+              className="object-cover w-full h-full"
             />
           </div>
-          
-          <div className="p-6">
+
+          {/* Info Section */}
+          <div className="p-6 flex flex-col justify-center">
             <div className="flex items-start">
               <HomeIcon size={20} className="text-primary mt-1 mr-2 flex-shrink-0" />
-              <h1 className="text-2xl font-bold text-text">{rental.title}</h1>
+              <h1
+                className="text-2xl font-bold text-text"
+                dangerouslySetInnerHTML={{ __html: rental.title.rendered }}
+              />
             </div>
-            
+
             <div className="flex items-start mt-4">
               <MapPin size={20} className="text-gray-500 mt-1 mr-2 flex-shrink-0" />
-              <p className="text-gray-700">{rental.location}</p>
+              <p className="text-gray-700">Location: Bhairahawa</p>
             </div>
-            
+
             <div className="mt-4 flex items-center">
               <Calendar size={20} className="text-gray-500 mr-2" />
-              <p className="text-gray-600">Posted on: {rental.postedAt}</p>
+              <p className="text-gray-600">
+                Posted on: {new Date(rental.date).toLocaleDateString('en-NP')}
+              </p>
             </div>
-            
+
             <div className="mt-6">
-              <p className="text-2xl font-bold text-primary">Rs. {rental.price.toLocaleString()}/month</p>
-              {rental.negotiable && (
-                <p className="text-sm text-accent mt-1">Price is negotiable</p>
-              )}
+              <p className="text-2xl font-bold text-primary">Rs. 22,000 (Negotiable)</p>
+              <p className="text-sm text-accent mt-1">Price is negotiable</p>
             </div>
-            
+
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-2">Facilities:</h3>
               <div className="grid grid-cols-2 gap-2">
-                {rental.facilities.map((facility, index) => (
-                  <div key={index} className="flex items-center">
-                    <CheckCircle size={16} className="text-action mr-2" />
-                    <span className="text-gray-700">{facility}</span>
-                  </div>
-                ))}
+                <div className="flex items-center">
+                  <CheckCircle size={16} className="text-action mr-2" />
+                  <span className="text-gray-700">2BHK Flat</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle size={16} className="text-action mr-2" />
+                  <span className="text-gray-700">Parking Space</span>
+                </div>
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={handleCall}
-              className="mt-8 w-full button-action flex items-center justify-center py-3"
+              className="mt-8 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg flex items-center justify-center"
             >
               <Phone size={20} className="mr-2" />
-              {rental.phone} - Call Now
+              Call Now
             </button>
           </div>
         </div>
-        
+
+        {/* Description */}
         <div className="p-6 border-t border-gray-200">
           <h3 className="text-lg font-semibold mb-4">Description:</h3>
-          <p className="text-gray-700">
-            {rental.description || "No detailed description provided for this rental property."}
-          </p>
-          
-          {rental.additionalInfo && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-2">Additional Information:</h3>
-              <p className="text-gray-700">{rental.additionalInfo}</p>
-            </div>
-          )}
+          <div
+            className="text-gray-700 prose max-w-none"
+            dangerouslySetInnerHTML={{ __html: rental.content.rendered }}
+          />
         </div>
       </div>
-      
-      {relatedRentals.length > 0 && (
-        <div className="mt-12">
-          <h2 className="section-heading text-2xl font-bold text-text mb-6">Similar Rentals Nearby</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {relatedRentals.map((related) => (
-              <RentalCard 
-                key={related.id}
-                id={related.id}
-                title={related.title}
-                location={related.location}
-                price={related.price}
-                facilities={related.facilities}
-                image={related.image}
-                phone={related.phone}
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

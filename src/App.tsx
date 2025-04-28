@@ -5,7 +5,7 @@ import NewsPage from './pages/NewsPage';
 import RentalsPage from './pages/RentalsPage';
 import CouponsPage from './pages/CouponsPage';
 import SearchPage from './pages/SearchPage';
-import SingleNewsPage from './pages/news/[id]';  // NEW dynamic single news page
+import NewsDetailPage from './pages/NewsDetailPage';  // ✅ Corrected
 import RentalDetailPage from './pages/RentalDetailPage';
 import CouponDetailPage from './pages/CouponDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -17,7 +17,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/news" element={<NewsPage />} />
-          <Route path="/news/:id" element={<SingleNewsPage />} /> {/* 🆕 Single News Page Routing */}
+          <Route path="/news/:id" element={<NewsDetailPage />} /> {/* ✅ Corrected */}
           <Route path="/rentals" element={<RentalsPage />} />
           <Route path="/rentals/:id" element={<RentalDetailPage />} />
           <Route path="/coupons" element={<CouponsPage />} />

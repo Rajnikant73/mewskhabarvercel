@@ -1,29 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CouponCard from '../components/CouponCard';
-import { dummyCouponData } from '../data/couponData';
 import { Search, Tag } from 'lucide-react';
+import { getCoupons } from '../api/getCoupons'; // 💥 Import your API function here
+
+interface CouponItem {
+  id: number;
+  title: { rendered: string };
+  excerpt: { rendered: string };
+  date: string;
+  _embedded?: {
+    'wp:featuredmedia'?: [
+      { source_url: string }
+    ];
+  };
+}
 
 const CouponsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  
+  const [coupons, setCoupons] = useState<CouponItem[]>([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(true);
+
   const categories = ['All', 'Food', 'Shopping', 'Entertainment', 'Services', 'Travel'];
-  
-  const filteredCoupons = dummyCouponData.filter(coupon => {
-    const matchesSearch = coupon.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          coupon.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          coupon.store.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = selectedCategory === '' || selectedCategory === 'All' || 
-                          coupon.category === selectedCategory;
-    
+
+  useEffect(() => {
+    async function fetchCouponsData() {
+      const data = await getCoupons();
+      setCoupons(data);
+      setLoadingCoupons(false);
+    }
+    fetchCouponsData();
+  }, []);
+
+  const filteredCoupons = coupons.filter(coupon => {
+    const title = coupon.title.rendered || '';
+    const description = coupon.excerpt.rendered || '';
+    const store = ''; // No store field yet
+
+    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          store.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory = selectedCategory === '' || selectedCategory === 'All';
     return matchesSearch && matchesCategory;
   });
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-text mb-8">Special Offers</h1>
-      
+
+      {/* Search & Category Filter */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-grow">
@@ -36,7 +62,7 @@ const CouponsPage: React.FC = () => {
             />
             <Search size={20} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
-          
+
           <div className="flex flex-wrap gap-2 items-center">
             <Tag size={16} className="text-primary" />
             {categories.map(category => (
@@ -55,19 +81,24 @@ const CouponsPage: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {filteredCoupons.length > 0 ? (
+
+      {/* Coupons Grid */}
+      {loadingCoupons ? (
+        <div className="text-center py-12">
+          <h3 className="text-xl font-medium text-gray-600">Loading Coupons...</h3>
+        </div>
+      ) : filteredCoupons.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredCoupons.map((coupon) => (
             <CouponCard 
               key={coupon.id}
-              id={coupon.id}
-              title={coupon.title}
-              description={coupon.description}
-              expiryDate={coupon.expiryDate}
-              image={coupon.image}
-              discount={coupon.discount}
-              store={coupon.store}
+              id={coupon.id.toString()}
+              title={coupon.title.rendered}
+              description={coupon.excerpt.rendered}
+              expiryDate={'31 Dec 2025'} // Static for now
+              image={coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || ''}
+              discount={'10% OFF'}
+              store={'Local Store'}
             />
           ))}
         </div>

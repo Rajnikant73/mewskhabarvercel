@@ -1,43 +1,69 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import RentalCard from '../components/RentalCard';
-import { dummyRentalData } from '../data/rentalData';
+import { getRentals } from '../api/getRentals';
 import { Search, MapPin, ArrowDownUp } from 'lucide-react';
 
+interface RentalItem {
+  id: number;
+  title: { rendered: string };
+  content: { rendered: string };
+  date: string;
+  featured_media?: number; // 🔥 added to plan for featured image later
+  _embedded?: any; // 🔥 optional: when we fetch full media image
+}
+
 const RentalsPage: React.FC = () => {
+  const [rentals, setRentals] = useState<RentalItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [sortBy, setSortBy] = useState('');
-  
+
   const locations = ['All', 'Butwal', 'Bhairahawa', 'Lumbini'];
   const sortOptions = [
     { value: 'price_low', label: 'Price: Low to High' },
     { value: 'price_high', label: 'Price: High to Low' },
     { value: 'newest', label: 'Newest First' }
   ];
-  
-  let filteredRentals = dummyRentalData.filter(rental => {
-    const matchesSearch = rental.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          rental.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesLocation = selectedLocation === '' || selectedLocation === 'All' || 
-                          rental.location.includes(selectedLocation);
-    
+
+  useEffect(() => {
+    async function fetchRentals() {
+      try {
+        const data = await getRentals();
+        setRentals(data);
+      } catch (error) {
+        console.error('Error fetching rentals:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRentals();
+  }, []);
+
+  let filteredRentals = rentals.filter((rental) => {
+    const title = rental.title.rendered.toLowerCase();
+    const matchesSearch = title.includes(searchTerm.toLowerCase());
+    const matchesLocation =
+      selectedLocation === '' ||
+      selectedLocation === 'All' ||
+      title.includes(selectedLocation.toLowerCase());
     return matchesSearch && matchesLocation;
   });
-  
-  // Sorting
-  if (sortBy === 'price_low') {
-    filteredRentals = [...filteredRentals].sort((a, b) => a.price - b.price);
-  } else if (sortBy === 'price_high') {
-    filteredRentals = [...filteredRentals].sort((a, b) => b.price - a.price);
-  } else if (sortBy === 'newest') {
-    filteredRentals = [...filteredRentals].sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
+
+  if (sortBy === 'newest') {
+    filteredRentals = [...filteredRentals].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }
+
+  if (loading) {
+    return <div className="text-center mt-10">Loading rentals...</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-text mb-8">Room/Flat Rentals</h1>
-      
+
       <div className="mb-8">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-grow">
@@ -50,10 +76,10 @@ const RentalsPage: React.FC = () => {
             />
             <Search size={20} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
-          
+
           <div className="flex flex-wrap gap-2 items-center">
             <MapPin size={16} className="text-primary" />
-            {locations.map(location => (
+            {locations.map((location) => (
               <button
                 key={location}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
@@ -68,7 +94,7 @@ const RentalsPage: React.FC = () => {
             ))}
           </div>
         </div>
-        
+
         <div className="mt-4 flex justify-end">
           <div className="flex items-center">
             <ArrowDownUp size={16} className="text-gray-500 mr-2" />
@@ -78,7 +104,7 @@ const RentalsPage: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value)}
             >
               <option value="">Sort By</option>
-              {sortOptions.map(option => (
+              {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -87,26 +113,29 @@ const RentalsPage: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {filteredRentals.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredRentals.map((rental) => (
-            <RentalCard 
-              key={rental.id}
-              id={rental.id}
-              title={rental.title}
-              location={rental.location}
-              price={rental.price}
-              facilities={rental.facilities}
-              image={rental.image}
-              phone={rental.phone}
-            />
-          ))}
+          {filteredRentals.map((rental) => {
+            const imageUrl = rental._embedded?.['wp:featuredmedia']?.[0]?.source_url || '';
+            return (
+              <RentalCard
+                key={rental.id}
+                id={String(rental.id)}
+                title={rental.title.rendered}
+                location="Bhairahawa" // Placeholder now
+                price={22000} // 🔥 Temporary fixed price, later dynamic from API
+                facilities={['2BHK Flat', 'Parking Space']} // 🔥 Placeholder for now
+                image={imageUrl}
+                phone="9818553941" // 🔥 Placeholder for now
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12">
-          <h3 className="text-xl font-medium text-gray-600">Room/Flat Vetiyena</h3>
-          <p className="text-gray-500 mt-2">Kripaya arko keyword le khojnuhos.</p>
+          <h3 className="text-xl font-medium text-gray-600">Room/Flat भेटिएन</h3>
+          <p className="text-gray-500 mt-2">कृपया अर्को keyword ले खोज्नुहोस्।</p>
         </div>
       )}
     </div>
