@@ -85,7 +85,6 @@ const HomePage: React.FC = () => {
     fetchCouponData();
   }, []);
 
-  // 🔥 NEW: Full Page Loading Logic
   if (loadingNews || loadingRentals || loadingCoupons) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -110,7 +109,7 @@ const HomePage: React.FC = () => {
                 id={item.id.toString()}
                 title={item.title.rendered}
                 excerpt={item.excerpt.rendered}
-                image={item._embedded?.['wp:featuredmedia']?.[0]?.source_url || ''}
+                image={item._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
                 date={item.date}
                 category={''}
               />
@@ -127,11 +126,11 @@ const HomePage: React.FC = () => {
                 key={rental.id}
                 id={rental.id.toString()}
                 title={rental.title.rendered}
-                location={'Bhairahawa'} // 🔥 Static for now
-                price={22000} // 🔥 Static for now
-                facilities={[]} // 🔥 Static for now
-                image={rental._embedded?.['wp:featuredmedia']?.[0]?.source_url || ''}
-                phone={'9818553941'} // 🔥 Static for now
+                location={'Bhairahawa'}
+                price={22000}
+                facilities={[]} 
+                image={rental._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
+                phone={'9818553941'}
               />
             ))}
           </div>
@@ -147,8 +146,8 @@ const HomePage: React.FC = () => {
                 id={coupon.id.toString()}
                 title={coupon.title.rendered}
                 description={coupon.excerpt.rendered}
-                expiryDate={'31 Dec 2025'} // 🔥 Static for now
-                image={coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || ''}
+                expiryDate={'31 Dec 2025'}
+                image={coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
                 discount={'10% OFF'}
                 store={'Local Store'}
               />
