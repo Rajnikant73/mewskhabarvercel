@@ -16,9 +16,9 @@ export default function SingleNewsPage() {
   useEffect(() => {
     async function fetchPost() {
       try {
-        const response = await fetch(`https://mewskhabar.com/wp-json/wp/v2/posts?slug=${slug}`);
+        const response = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts?slug=${slug}`);
         const data = await response.json();
-        setPost(data[0]);
+        setPost(data[0]); // because WordPress returns an array even if 1 post
       } catch (error) {
         console.error('Error fetching single post:', error);
       } finally {
