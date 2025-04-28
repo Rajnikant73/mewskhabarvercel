@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'; // <<== IMPORTANT ADDITION
 import { getNews } from '../api/getNews';
 
 interface NewsItem {
@@ -7,7 +7,6 @@ interface NewsItem {
   title: { rendered: string };
   excerpt: { rendered: string };
   date: string;
-  slug: string; // ✅ Important for internal link
 }
 
 export default function NewsPage() {
@@ -20,7 +19,7 @@ export default function NewsPage() {
         const data = await getNews();
         setNews(data);
       } catch (error) {
-        console.error('Error fetching news:', error);
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -48,7 +47,7 @@ export default function NewsPage() {
               dangerouslySetInnerHTML={{ __html: item.excerpt.rendered }}
             />
             <Link
-              to={`/news/${item.slug}`}
+              to={`/news/${item.id}`} // <<== Corrected internal routing
               className="text-blue-600 font-medium mt-2 inline-block"
             >
               पूरा समाचार पढ्नुहोस् →
