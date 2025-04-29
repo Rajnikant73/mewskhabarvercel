@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Slide {
@@ -7,99 +8,92 @@ interface Slide {
   image: string;
 }
 
-const slides: Slide[] = [
-  {
-    id: 1,
-    title: "Khoji Rahal Bani Sasta Room? Aba Milayi Aapan Ghar Online!",
-    image: "https://images.pexels.com/photos/1438832/pexels-photo-1438832.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-  },
-  {
-    id: 2,
-    title: "Bachau Paisa — Lumbini ke Top Discounts Aba Mews Khabar ma!",
-    image: "https://images.pexels.com/photos/3810792/pexels-photo-3810792.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-  },
-  {
-    id: 3,
-    title: "Taja Taja Khabar, Aba Mobile Ma — Butwal, Bhairahawa se Live!",
-    image: "https://images.pexels.com/photos/2325446/pexels-photo-2325446.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-  }
-];
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const HeroSlider: React.FC = () => {
+  // 1) grab data
+  const { data: posts, error } = useSWR<any[]>(
+    'https://news.mewskhabar.com/wp-json/wp/v2/slider?_embed',
+    fetcher,
+    { refreshInterval: 600000 } // revalidate every 10m
+  );
+
+  // 2) derive slides once posts arrive
+  const slides: Slide[] = React.useMemo(() => {
+    if (!posts) return [];
+    return posts.map(p => ({
+      id: p.id,
+      title: p.title.rendered,
+      image: p._embedded?.['wp:featuredmedia']?.[0]?.source_url || '/fallback.jpg',
+    }));
+  }, [posts]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index);
-  };
+  const goToPrevious = useCallback(() => {
+    setCurrentIndex(i => (i === 0 ? slides.length - 1 : i - 1));
+  }, [slides.length]);
 
-  const goToPrevious = () => {
-    const isFirstSlide = currentIndex === 0;
-    const newIndex = isFirstSlide ? slides.length - 1 : currentIndex - 1;
-    setCurrentIndex(newIndex);
-  };
+  const goToNext = useCallback(() => {
+    setCurrentIndex(i => (i === slides.length - 1 ? 0 : i + 1));
+  }, [slides.length]);
 
-  const goToNext = () => {
-    const isLastSlide = currentIndex === slides.length - 1;
-    const newIndex = isLastSlide ? 0 : currentIndex + 1;
-    setCurrentIndex(newIndex);
-  };
-
+  // 3) autoplay
   useEffect(() => {
-    const slideInterval = setInterval(() => {
-      goToNext();
-    }, 5000);
-    
-    return () => clearInterval(slideInterval);
-  }, [currentIndex]);
+    if (!slides.length) return;
+    const iv = setInterval(goToNext, 5000);
+    return () => clearInterval(iv);
+  }, [goToNext, slides.length]);
 
+  // 4) loading & error
+  if (error) return <div className="h-64 flex items-center justify-center">Failed to load slides</div>;
+  if (!posts) return <div className="h-64 flex items-center justify-center">Loading slides…</div>;
+
+  // 5) render
   return (
-    <div className="relative h-[400px] md:h-[500px] w-full">
+    <div className="relative h-[400px] md:h-[500px] w-full overflow-hidden">
       <div
-        className="h-full w-full bg-center bg-cover duration-500 transition-all relative"
-        style={{ backgroundImage: `url(${slides[currentIndex].image})` }}
+        className="absolute inset-0 bg-center bg-cover transition-opacity duration-700"
+        style={{ backgroundImage: `url(${slides[currentIndex].image})`, opacity: 0.98 }}
       >
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
           <div className="text-center px-4">
-            <h2 className="text-white text-xl md:text-3xl font-bold max-w-4xl mx-auto">
+            <h2 className="text-white text-xl md:text-3xl font-bold max-w-3xl mx-auto">
               {slides[currentIndex].title}
             </h2>
-            <button className="mt-6 px-6 py-2 bg-primary text-white rounded-md font-medium hover:bg-blue-600 transition-colors">
+            <button className="mt-6 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium transition">
               Thapne Janakari
             </button>
           </div>
         </div>
       </div>
 
-      {/* Navigation Arrows */}
-      <div className="absolute top-1/2 -translate-y-1/2 left-4 cursor-pointer">
-        <button 
-          onClick={goToPrevious}
-          className="p-2 rounded-full bg-white/30 text-white hover:bg-white/50 transition-colors"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft size={24} />
-        </button>
-      </div>
-      <div className="absolute top-1/2 -translate-y-1/2 right-4 cursor-pointer">
-        <button
-          onClick={goToNext}
-          className="p-2 rounded-full bg-white/30 text-white hover:bg-white/50 transition-colors"
-          aria-label="Next slide"
-        >
-          <ChevronRight size={24} />
-        </button>
-      </div>
+      {/* arrows */}
+      <button
+        onClick={goToPrevious}
+        aria-label="Previous slide"
+        className="absolute top-1/2 left-4 -translate-y-1/2 p-2 bg-white/30 hover:bg-white/50 text-white rounded-full z-10"
+      >
+        <ChevronLeft size={24} />
+      </button>
+      <button
+        onClick={goToNext}
+        aria-label="Next slide"
+        className="absolute top-1/2 right-4 -translate-y-1/2 p-2 bg-white/30 hover:bg-white/50 text-white rounded-full z-10"
+      >
+        <ChevronRight size={24} />
+      </button>
 
-      {/* Indicators */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {slides.map((_, slideIndex) => (
+      {/* indicators */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+        {slides.map((_, idx) => (
           <button
-            key={slideIndex}
-            onClick={() => goToSlide(slideIndex)}
-            className={`w-3 h-3 rounded-full ${
-              currentIndex === slideIndex ? 'bg-white' : 'bg-white/50'
+            key={idx}
+            onClick={() => setCurrentIndex(idx)}
+            aria-label={`Go to slide ${idx + 1}`}
+            className={`w-3 h-3 rounded-full transition ${
+              currentIndex === idx ? 'bg-white' : 'bg-white/50'
             }`}
-            aria-label={`Go to slide ${slideIndex + 1}`}
           />
         ))}
       </div>
