@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet'; // ✅ Import Helmet
 
 interface NewsPost {
   id: number;
   title: { rendered: string };
   content: { rendered: string };
   date: string;
+  excerpt?: { rendered: string }; // ✅ Optional: For description
+  _embedded?: {
+    'wp:featuredmedia'?: [
+      {
+        source_url: string;
+      }
+    ];
+  };
 }
 
 export default function NewsDetailPage() {
-  const { id } = useParams<{ id: string }>(); // ✅ Corrected to id
+  const { slug } = useParams<{ slug: string }>(); // ✅ Correct param: slug, not id
   const navigate = useNavigate();
   const [post, setPost] = useState<NewsPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,20 +26,20 @@ export default function NewsDetailPage() {
   useEffect(() => {
     async function fetchPost() {
       try {
-        const res = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts/${id}`);
+        const res = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts?slug=${slug}&_embed`);
         if (!res.ok) {
           throw new Error('Failed to fetch post');
         }
         const data = await res.json();
-        setPost(data);
+        setPost(data[0]);
       } catch (error) {
         console.error('Error fetching post:', error);
       } finally {
         setLoading(false);
       }
     }
-    if (id) fetchPost();
-  }, [id]);
+    if (slug) fetchPost();
+  }, [slug]);
 
   if (loading) {
     return <div className="text-center mt-10">Loading full news...</div>;
@@ -40,10 +49,32 @@ export default function NewsDetailPage() {
     return <div className="text-center mt-10 text-red-600 font-semibold">समाचार भेटिएन!</div>;
   }
 
-  const shareUrl = `https://www.mewskhabar.com/news/${id}`;
+  const shareUrl = `https://www.mewskhabar.com/news/${slug}`;
+  const shareImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://mewskhabar.com/default-news.jpg';
+  const shareDescription = post.excerpt?.rendered?.replace(/<[^>]+>/g, '') || 'नेपालको ताजा समाचार।';
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
+      {/* ✅ Helmet for SEO + Social Sharing */}
+      <Helmet>
+        <title>{post.title.rendered} | MewsKhabar</title>
+        <meta name="description" content={shareDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:title" content={post.title.rendered} />
+        <meta property="og:description" content={shareDescription} />
+        <meta property="og:image" content={shareImage} />
+        <meta property="og:url" content={shareUrl} />
+        <meta property="og:type" content="article" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={post.title.rendered} />
+        <meta name="twitter:description" content={shareDescription} />
+        <meta name="twitter:image" content={shareImage} />
+      </Helmet>
+
+      {/* ✅ Article Content */}
       <h1
         className="text-4xl font-bold mb-4 text-gray-800 leading-tight"
         dangerouslySetInnerHTML={{ __html: post.title.rendered }}
@@ -55,6 +86,8 @@ export default function NewsDetailPage() {
         className="prose prose-lg text-gray-700 max-w-none"
         dangerouslySetInnerHTML={{ __html: post.content.rendered }}
       />
+
+      {/* ✅ Share Buttons */}
       <div className="flex flex-wrap gap-4 mt-10">
         <a
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
@@ -73,6 +106,8 @@ export default function NewsDetailPage() {
           Share on WhatsApp
         </a>
       </div>
+
+      {/* ✅ Back Button */}
       <div className="mt-12">
         <button
           onClick={() => navigate('/news')}
