@@ -9,36 +9,31 @@ import { getRentals } from '../api/getRentals';
 
 interface NewsItem {
   id: number;
-  title: { rendered: string };
-  excerpt: { rendered: string };
+  slug: string;
+  title?: { rendered?: string };
+  excerpt?: { rendered?: string };
   date: string;
   _embedded?: {
-    'wp:featuredmedia'?: [
-      { source_url: string }
-    ];
+    'wp:featuredmedia'?: [{ source_url: string }];
   };
 }
 
 interface RentalItem {
   id: number;
-  title: { rendered: string };
+  title?: { rendered?: string };
   date: string;
   _embedded?: {
-    'wp:featuredmedia'?: [
-      { source_url: string }
-    ];
+    'wp:featuredmedia'?: [{ source_url: string }];
   };
 }
 
 interface CouponItem {
   id: number;
-  title: { rendered: string };
-  excerpt: { rendered: string };
+  title?: { rendered?: string };
+  excerpt?: { rendered?: string };
   date: string;
   _embedded?: {
-    'wp:featuredmedia'?: [
-      { source_url: string }
-    ];
+    'wp:featuredmedia'?: [{ source_url: string }];
   };
 }
 
@@ -56,7 +51,7 @@ const HomePage: React.FC = () => {
     async function fetchNews() {
       try {
         const res = await fetch('https://news.mewskhabar.com/wp-json/wp/v2/posts?_embed');
-        const data = await res.json();
+        const data: NewsItem[] = await res.json();
         setNews(data);
       } catch (error) {
         console.error('Error fetching news:', error);
@@ -98,22 +93,32 @@ const HomePage: React.FC = () => {
       <HeroSlider />
 
       <div className="container mx-auto px-4 py-8">
-
         {/* News Section */}
         <section className="mb-12">
           <SectionHeading title="Aaja Ko Taja Khabar" link="/news" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {news.slice(0, 5).map((item) => (
-              <NewsCard 
-                key={item.id}
-                id={item.id.toString()}
-                title={item.title.rendered}
-                excerpt={item.excerpt.rendered}
-                image={item._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
-                date={item.date}
-                category={''}
-              />
-            ))}
+            {news
+              .filter(
+                (item) =>
+                  item.slug &&
+                  item.title?.rendered &&
+                  item.excerpt?.rendered
+              )
+              .slice(0, 5)
+              .map((item) => (
+                <NewsCard
+                  key={item.id}
+                  id={item.slug}
+                  title={item.title!.rendered!}
+                  excerpt={item.excerpt!.rendered!}
+                  image={
+                    item._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
+                    'https://via.placeholder.com/400x300?text=No+Image'
+                  }
+                  date={item.date}
+                  category={''}
+                />
+              ))}
           </div>
         </section>
 
@@ -121,46 +126,63 @@ const HomePage: React.FC = () => {
         <section className="mb-12">
           <SectionHeading title="Room/Flat Khojna Sajilo!" link="/rentals" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {rentals.slice(0, 4).map((rental) => (
-              <RentalCard 
-                key={rental.id}
-                id={rental.id.toString()}
-                title={rental.title.rendered}
-                location={'Bhairahawa'}
-                price={22000}
-                facilities={[]} 
-                image={rental._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
-                phone={'9818553941'}
-              />
-            ))}
+            {rentals
+              .filter((r) => r.title?.rendered)
+              .slice(0, 4)
+              .map((r) => (
+                <RentalCard
+                  key={r.id}
+                  id={r.id.toString()}
+                  title={r.title!.rendered!}
+                  location={'Bhairahawa'}
+                  price={22000}
+                  facilities={[]}
+                  image={
+                    r._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
+                    'https://via.placeholder.com/400x300?text=No+Image'
+                  }
+                  phone={'9818553941'}
+                />
+              ))}
           </div>
         </section>
 
         {/* Coupons Section */}
-        {/* Coupons Section */}
-<section className="mb-12">
-  <SectionHeading title="Aaja Ko Special Offer" link="/coupons" />
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    {coupons.slice(0, 4).map((coupon) => (
-      <CouponCard 
-        key={coupon.id}
-        id={coupon.id.toString()}
-        title={coupon?.title?.rendered || ''}
-        description={coupon?.excerpt?.rendered || ''}
-        expiryDate={'31 Dec 2025'}
-        image={coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
-        discount={'10% OFF'}
-        store={'Local Store'}
-      />
-    ))}
-  </div>
-</section>
+        <section className="mb-12">
+          <SectionHeading title="Aaja Ko Special Offer" link="/coupons" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {coupons
+              .filter((c) => c.title?.rendered && c.excerpt?.rendered)
+              .slice(0, 4)
+              .map((c) => (
+                <CouponCard
+                  key={c.id}
+                  id={c.id.toString()}
+                  title={c.title!.rendered!}
+                  description={c.excerpt!.rendered!}
+                  expiryDate={'31 Dec 2025'}
+                  image={
+                    c._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
+                    'https://via.placeholder.com/400x300?text=No+Image'
+                  }
+                  discount={'10% OFF'}
+                  store={'Local Store'}
+                />
+              ))}
+          </div>
+        </section>
 
         {/* About Section */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-12">
-          <h2 className="section-heading text-2xl font-bold text-text mb-4">Hamro Barey Ma</h2>
+          <h2 className="section-heading text-2xl font-bold text-text mb-4">
+            Hamro Barey Ma
+          </h2>
           <p className="text-gray-700 leading-relaxed">
-            Gaav se sahar sabke liye — Aba sab suvidha ekai thau ma! Mews Khabar le Lumbini, Butwal, ra Bhairahawa ko taja khabar, room rental, ani local business ko discount offer haru sajilo tarika le lyaune prayas gareko cha. Hamro udeshya yaha ko basinda haru lai digital convenience ra local suvidha eutai platform ma provide garne ho.
+            Gaav se sahar sabke liye — Aba sab suvidha ekai thau ma! Mews Khabar
+            le Lumbini, Butwal, ra Bhairahawa ko taja khabar, room rental, ani
+            local business ko discount offer haru sajilo tarika le lyaune
+            prayas gareko cha. Hamro udeshya yaha ko basinda haru lai digital
+            convenience ra local suvidha eutai platform ma provide garne ho.
           </p>
         </section>
       </div>
