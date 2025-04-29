@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import CouponCard from '../components/CouponCard';
 import { Search, Tag } from 'lucide-react';
-import { getCoupons } from '../api/getCoupons'; // 💥 Import your API function here
+import { getCoupons } from '../api/getCoupons'; // ✅ Correct API Import
 
 interface CouponItem {
   id: number;
-  title: { rendered: string };
-  excerpt: { rendered: string };
-  date: string;
+  title?: { rendered: string };
+  content?: { rendered: string };
+  excerpt?: { rendered: string };
+  date?: string;
   _embedded?: {
     'wp:featuredmedia'?: [
       { source_url: string }
@@ -32,10 +33,12 @@ const CouponsPage: React.FC = () => {
     fetchCouponsData();
   }, []);
 
-  const filteredCoupons = coupons.filter(coupon => {
-    const title = coupon.title.rendered || '';
-    const description = coupon.excerpt.rendered || '';
-    const store = ''; // No store field yet
+  const filteredCoupons = coupons
+  .filter(coupon => coupon.title?.rendered && coupon.excerpt?.rendered) // 🛡️ only valid coupons
+  .filter(coupon => {
+    const title = coupon.title?.rendered || '';
+    const description = coupon.excerpt?.rendered || '';
+    const store = '';
 
     const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,6 +47,8 @@ const CouponsPage: React.FC = () => {
     const matchesCategory = selectedCategory === '' || selectedCategory === 'All';
     return matchesSearch && matchesCategory;
   });
+
+  console.log('Coupons fetched:', coupons);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -91,11 +96,11 @@ const CouponsPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredCoupons.map((coupon) => (
             <CouponCard 
-              key={coupon.id}
-              id={coupon.id.toString()}
-              title={coupon.title.rendered}
-              description={coupon.excerpt.rendered}
-              expiryDate={'31 Dec 2025'} // Static for now
+              key={coupon.id?.toString() || ''}
+              id={coupon.id?.toString() || ''}
+              title={coupon.title?.rendered || 'No Title'}
+              description={coupon.excerpt?.rendered || 'No Description'}
+              expiryDate={'31 Dec 2025'}
               image={coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || ''}
               discount={'10% OFF'}
               store={'Local Store'}

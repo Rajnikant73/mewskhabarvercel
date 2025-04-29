@@ -8,6 +8,7 @@ interface CouponItem {
   id: number;
   title: { rendered: string };
   excerpt: { rendered: string };
+  content: { rendered: string }; // ✨ Added for full description
   date: string;
   _embedded?: {
     'wp:featuredmedia'?: [
@@ -29,12 +30,10 @@ const CouponDetailPage: React.FC = () => {
         const data = await res.json();
         setCoupon(data);
 
-        // Fetch related coupons
         const relatedRes = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/coupon?_embed`);
         const relatedData = await relatedRes.json();
         const related = relatedData.filter((item: CouponItem) => item.id !== Number(id)).slice(0, 3);
         setRelatedCoupons(related);
-
       } catch (error) {
         console.error('Error fetching coupon details:', error);
       } finally {
@@ -45,7 +44,7 @@ const CouponDetailPage: React.FC = () => {
   }, [id]);
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText('NO-CODE-NEEDED'); // static or you can improve later
+    navigator.clipboard.writeText('NO-CODE-NEEDED');
     alert('Coupon code copied to clipboard!');
   };
 
@@ -57,68 +56,78 @@ const CouponDetailPage: React.FC = () => {
     return <NotFoundPage />;
   }
 
-  const imageUrl = coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || '';
+  const imageUrl = coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/600x400.png?text=Coupon+Image';
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Back Button */}
       <div className="mb-6">
         <Link to="/coupons" className="flex items-center text-primary hover:text-primary/80 font-medium">
           <ArrowLeft size={16} className="mr-1" />
           <span>Sab Offers Ma Janus</span>
         </Link>
       </div>
-      
-      <div className="bg-white rounded-lg shadow-md overflow-hidden border-2 border-offer/30">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-[250px] md:h-full bg-gray-50 flex items-center justify-center p-6">
-            <img 
-              src={imageUrl} 
-              alt={coupon.title.rendered} 
-              className="max-w-full max-h-full object-contain"
-            />
+
+      {/* Main Card */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6">
+          {/* Left: Image */}
+          <div className="w-full h-[250px] sm:h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden bg-gray-100">
+          <img
+  src={imageUrl}
+  alt={coupon?.title?.rendered || 'Coupon Image'}
+  className="object-cover w-full h-auto max-h-[400px] mx-auto"
+/>
           </div>
-          
-          <div className="p-6">
+
+          {/* Right: Details */}
+          <div className="p-6 flex flex-col justify-center">
             <div className="text-sm text-gray-600 mb-1">Local Store</div>
-            <h1 className="text-2xl font-bold text-text mb-4">{coupon.title.rendered}</h1>
-            
-            <div className="bg-offer/20 text-text p-3 rounded-lg font-bold text-xl mb-4">
+            <h1
+              className="text-2xl font-bold text-text"
+              dangerouslySetInnerHTML={{ __html: coupon?.title?.rendered }}
+            />
+
+            <div className="mt-4 bg-offer/20 text-primary p-3 rounded-lg text-lg font-bold">
               10% OFF
             </div>
-            
-            <div className="flex items-center text-sm text-gray-500 mb-4">
+
+            <div className="mt-4 flex items-center text-sm text-gray-500">
               <Calendar size={16} className="mr-1" />
-              <span>Valid until: 31 Dec 2025</span> {/* Static until real expiry field added */}
-            </div>
-            
-            <div className="flex items-start mb-4">
-              <TagIcon size={16} className="text-gray-500 mt-1 mr-2 flex-shrink-0" />
-              <span className="text-gray-700">Food</span> {/* Static until real category added */}
+              <span>Valid until: 31 Dec 2025</span>
             </div>
 
-            <div className="flex items-start mb-6">
-              <MapPin size={16} className="text-gray-500 mt-1 mr-2 flex-shrink-0" />
-              <p className="text-gray-700">Milan Chowk, Butwal</p> {/* Static until real location field added */}
+            <div className="mt-4 flex items-start text-sm text-gray-700">
+              <TagIcon size={16} className="text-gray-500 mt-1 mr-2" />
+              <span>Food</span>
             </div>
 
-            <button 
+            <div className="mt-4 flex items-start text-sm text-gray-700">
+              <MapPin size={16} className="text-gray-500 mt-1 mr-2" />
+              <p>Milan Chowk, Butwal</p>
+            </div>
+
+            <button
               onClick={handleCopyCode}
-              className="mt-6 w-full button-action flex items-center justify-center py-3"
+              className="mt-8 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg flex items-center justify-center"
             >
               <Copy size={20} className="mr-2" />
               Copy Offer Code
             </button>
           </div>
         </div>
-        
+
+        {/* Full Description */}
         <div className="p-6 border-t border-gray-200">
           <h3 className="text-lg font-semibold mb-4">Description:</h3>
-          <div className="text-gray-700 mb-4" dangerouslySetInnerHTML={{ __html: coupon.excerpt.rendered }} />
-
-          {/* No Terms & Conditions yet, can add later if available */}
+          <div
+            className="text-gray-700 prose max-w-none"
+            dangerouslySetInnerHTML={{ __html: coupon?.content?.rendered || '' }}
+          />
         </div>
       </div>
 
+      {/* Related Coupons */}
       {relatedCoupons.length > 0 && (
         <div className="mt-12">
           <h2 className="section-heading text-2xl font-bold text-text mb-6">Similar Offers</h2>
@@ -127,8 +136,8 @@ const CouponDetailPage: React.FC = () => {
               <CouponCard 
                 key={related.id}
                 id={related.id.toString()}
-                title={related.title.rendered}
-                description={related.excerpt.rendered}
+                title={related.title?.rendered || ''}
+                description={related.excerpt?.rendered || ''}
                 expiryDate={'31 Dec 2025'}
                 image={related._embedded?.['wp:featuredmedia']?.[0]?.source_url || ''}
                 discount={'10% OFF'}

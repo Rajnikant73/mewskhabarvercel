@@ -137,23 +137,24 @@ const HomePage: React.FC = () => {
         </section>
 
         {/* Coupons Section */}
-        <section className="mb-12">
-          <SectionHeading title="Aaja Ko Special Offer" link="/coupons" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {coupons.slice(0, 4).map((coupon) => (
-              <CouponCard 
-                key={coupon.id}
-                id={coupon.id.toString()}
-                title={coupon.title.rendered}
-                description={coupon.excerpt.rendered}
-                expiryDate={'31 Dec 2025'}
-                image={coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
-                discount={'10% OFF'}
-                store={'Local Store'}
-              />
-            ))}
-          </div>
-        </section>
+        {/* Coupons Section */}
+<section className="mb-12">
+  <SectionHeading title="Aaja Ko Special Offer" link="/coupons" />
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    {coupons.slice(0, 4).map((coupon) => (
+      <CouponCard 
+        key={coupon.id}
+        id={coupon.id.toString()}
+        title={coupon?.title?.rendered || ''}
+        description={coupon?.excerpt?.rendered || ''}
+        expiryDate={'31 Dec 2025'}
+        image={coupon._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://via.placeholder.com/400x300?text=No+Image'}
+        discount={'10% OFF'}
+        store={'Local Store'}
+      />
+    ))}
+  </div>
+</section>
 
         {/* About Section */}
         <section className="bg-white rounded-lg shadow-md p-6 mb-12">
