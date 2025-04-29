@@ -1,23 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
 
 interface NewsPost {
   id: number;
-  slug: string;
   title: { rendered: string };
   content: { rendered: string };
-  excerpt: { rendered: string };
   date: string;
-  _embedded?: {
-    'wp:featuredmedia'?: [
-      { source_url: string }
-    ];
-  };
 }
 
 export default function NewsDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams<{ slug: string }>(); // ✅ slug not id
   const navigate = useNavigate();
   const [post, setPost] = useState<NewsPost | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,13 +17,12 @@ export default function NewsDetailPage() {
   useEffect(() => {
     async function fetchPost() {
       try {
-        const encodedSlug = encodeURIComponent(slug || '');
-        const res = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts?slug=${encodedSlug}&_embed`);
+        const res = await fetch(`https://news.mewskhabar.com/wp-json/wp/v2/posts?slug=${slug}`);
         if (!res.ok) {
           throw new Error('Failed to fetch post');
         }
         const data = await res.json();
-        setPost(data[0]);
+        setPost(data[0]); // ✅ Slug returns an array, pick first item
       } catch (error) {
         console.error('Error fetching post:', error);
       } finally {
@@ -49,25 +40,10 @@ export default function NewsDetailPage() {
     return <div className="text-center mt-10 text-red-600 font-semibold">समाचार भेटिएन!</div>;
   }
 
-  // Setup Share URL and Share Image
-  const shareUrl = `https://www.mewskhabar.com/news/${post.slug}`;
-  const shareImage = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || 'https://mewskhabar.com/default-news.jpg';
+  const shareUrl = `https://www.mewskhabar.com/news/${slug}`;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
-      {/* Helmet for SEO and Facebook, WhatsApp, Twitter */}
-      <Helmet>
-        <title>{post.title.rendered}</title>
-        <meta name="description" content={post.excerpt?.rendered.replace(/(<([^>]+)>)/gi, "")} />
-        <meta property="og:type" content="article" />
-        <meta property="og:title" content={post.title.rendered} />
-        <meta property="og:description" content={post.excerpt?.rendered.replace(/(<([^>]+)>)/gi, "")} />
-        <meta property="og:image" content={shareImage} />
-        <meta property="og:url" content={shareUrl} />
-        <meta property="og:site_name" content="Mews Khabar" />
-      </Helmet>
-
-      {/* News Content */}
       <h1
         className="text-4xl font-bold mb-4 text-gray-800 leading-tight"
         dangerouslySetInnerHTML={{ __html: post.title.rendered }}
@@ -79,8 +55,6 @@ export default function NewsDetailPage() {
         className="prose prose-lg text-gray-700 max-w-none"
         dangerouslySetInnerHTML={{ __html: post.content.rendered }}
       />
-
-      {/* Share Buttons */}
       <div className="flex flex-wrap gap-4 mt-10">
         <a
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
@@ -99,8 +73,6 @@ export default function NewsDetailPage() {
           Share on WhatsApp
         </a>
       </div>
-
-      {/* Back to News Button */}
       <div className="mt-12">
         <button
           onClick={() => navigate('/news')}
